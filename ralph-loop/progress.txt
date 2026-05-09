@@ -42,3 +42,14 @@
   - livekit-plugins-all doesn't exist on PyPI - use individual plugin packages
   - livekit module doesn't have __version__ attribute - check via pip or import agents
   - Docker 29.1.3 available for self-hosted LiveKit server
+
+## 2026-05-09 - Story 4: Build Baseline Voice Loop
+- **What was implemented:** Created baseline_loop.py with full voice pipeline
+- **Files changed:** baseline_loop.py (8716 bytes)
+- **Pipeline:** mic → VAD (energy-based) → Faster-Whisper STT → Ollama LLM (qwen2.5:0.5b) → Kokoro-ONNX TTS → speaker
+- **Benchmark:** LLM response ~0.9s, TTS ~1.77s audio generated
+- **Learnings:**
+  - qwen2.5:0.5b gives 0.9s total response time for simple queries
+  - Kokoro-ONNX generates audio in ~1.7s for 30-word response
+  - Queue-based architecture with streaming LLM→TTS
+- **Commit:** feat: 4 - Build Baseline Voice Loop
