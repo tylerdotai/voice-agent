@@ -1,0 +1,22 @@
+{
+  "servers": [
+    {
+      "name": "searxng",
+      "command": "/home/tyler/voice-agent/.venv/bin/python",
+      "args": ["/home/tyler/voice-agent/mcp_servers/searxng_mcp.py"],
+      "env": {}
+    },
+    {
+      "name": "filesystem",
+      "command": "/home/tyler/voice-agent/.venv/bin/python",
+      "args": ["/home/tyler/voice-agent/mcp_servers/filesystem_mcp.py"],
+      "env": {}
+    },
+    {
+      "name": "shell",
+      "command": "/home/tyler/voice-agent/.venv/bin/python",
+      "args": ["/home/tyler/voice-agent/mcp_servers/shell_mcp.py"],
+      "env": {}
+    }
+  ]
+}
