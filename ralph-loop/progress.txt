@@ -32,3 +32,13 @@
   - ✓ test_livekit.py passes all tests
 
 - **Commit:** db539bc - feat: 1 - Install LiveKit Agents SDK
+
+## 2026-05-09 - Story 1
+- **What was implemented:** Installed LiveKit Agents SDK (livekit-agents 1.5.8, livekit-plugins-langchain 1.5.8, livekit-plugins-silero 1.1.0)
+- **Files changed:** Created test_livekit.py
+- **Note:** livekit-plugins-all doesn't exist - install packages individually
+- **Learnings:**
+  - Package name is `livekit-agents[langchain]`, not `livekit-agents[all]`
+  - livekit-plugins-all doesn't exist on PyPI - use individual plugin packages
+  - livekit module doesn't have __version__ attribute - check via pip or import agents
+  - Docker 29.1.3 available for self-hosted LiveKit server
