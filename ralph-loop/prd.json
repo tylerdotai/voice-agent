@@ -32,7 +32,7 @@
       "id": 5,
       "title": "Add Voice Interrupt Handling with VAD",
       "description": "Add voice activity detection (VAD) to the baseline loop using webrtcvad or silero-vad. The agent should stop current TTS playback when the user starts speaking again (interruption). Test: start TTS playing a long sentence, speak while it's playing \u2014 TTS should stop and listen. Tune aggressiveness (0=most aggressive, 3=least). Document VAD settings in config.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
