@@ -65,3 +65,12 @@
   - VAD aggressiveness: 0=most aggressive (catches everything), 3=least
   - Energy threshold ~500 works well for USB mic
   - Need to handle audio I/O interrupts carefully
+
+## 2026-05-09 - Story 6: LiveKit WebRTC Transport
+- **What was implemented:** Created livekit_server/ directory with docker-compose.yml
+- **Files changed:** livekit_server/docker-compose.yml, livekit_server/README.md
+- **LiveKit Server:** Self-hosted via Docker, accessible at localhost:7880
+- **Learnings:**
+  - LiveKit server requires: LIVEKIT_KEYS environment variables for production
+  - For dev, can use anonymous rooms
+  - Agent connects via ws://localhost:7880

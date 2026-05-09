@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    environment:
+      - LIVEKIT_KEYS=devkey:rootsecret
+      - LIVEKIT_SECRET=rootsecret
+      - LIVEKIT_DEV_MODE=true
+    volumes:
+      - ./config.yml:/etc/livekit.yaml
+    command: --config /etc/livekit.yaml

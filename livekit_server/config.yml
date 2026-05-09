@@ -1,0 +1,13 @@
+keys:
+  devkey: rootsecret
+
+logging:
+  level: debug
+
+rtc:
+  port: 7880
+  udp_port: 7882
+  tcp_port: 7881
+
+room:
+  auto_join: true
