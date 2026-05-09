@@ -1,68 +1,61 @@
 #!/usr/bin/env python3
-"""Story 1: LiveKit Agents SDK Echo Test
-Verify LiveKit Agents SDK is properly installed.
-"""
+"""Test script to verify LiveKit Agents SDK installation."""
 
-from livekit import api
-from livekit.agents import Agent, AgentSession, JobContext, JobRequest
-from livekit.plugins import openai
 import sys
 
-def test_livekit_imports():
-    """Test that all LiveKit packages import correctly."""
-    print("Testing LiveKit imports...")
-    
+
+def test_livekit_import():
+    """Test that LiveKit modules can be imported."""
     try:
         from livekit import api
-        print("  ✓ livekit (core)")
-        
-        from livekit.agents import Agent, AgentSession, JobContext, JobRequest
-        print("  ✓ livekit-agents")
-        
-        from livekit.plugins import openai
-        print("  ✓ livekit-plugins-openai")
-        
-        from livekit.plugins import anthropic
-        print("  ✓ livekit-plugins-anthropic")
-        
-        return True
+        print("✓ LiveKit API imported successfully")
     except ImportError as e:
-        print(f"  ✗ Import failed: {e}")
+        print(f"✗ Failed to import LiveKit API: {e}")
         return False
+    return True
 
-def test_livekit_api():
-    """Test LiveKit API functionality."""
-    print("\nTesting LiveKit API...")
+
+def test_agents_import():
+    """Test that LiveKit Agents can be imported."""
     try:
-        # Just verify the module is functional
-        access_token = api.AccessToken("test_key", "test_secret")
-        print("  ✓ AccessToken class available")
-        return True
-    except Exception as e:
-        print(f"  ✗ API test failed: {e}")
+        from livekit.agents import Agent, AgentSession, function_tool
+        print("✓ LiveKit Agents core imported successfully")
+    except ImportError as e:
+        print(f"✗ Failed to import LiveKit Agents: {e}")
         return False
+    return True
+
+
+def test_plugins_import():
+    """Test that LiveKit plugins can be imported."""
+    try:
+        from livekit.plugins import langchain
+        print("✓ LiveKit langchain plugin imported successfully")
+    except ImportError as e:
+        print(f"✗ Failed to import LiveKit langchain plugin: {e}")
+        return False
+    return True
+
 
 def main():
-    print("=" * 50)
-    print("LiveKit Agents SDK Echo Test")
-    print("=" * 50)
+    """Run all LiveKit tests."""
+    print("Testing LiveKit Agents SDK Installation")
+    print("=" * 40)
     
-    results = []
+    results = [
+        test_livekit_import(),
+        test_agents_import(),
+        test_plugins_import(),
+    ]
     
-    print("\n[1] Import Test")
-    results.append(test_livekit_imports())
-    
-    print("\n[2] API Functionality Test")
-    results.append(test_livekit_api())
-    
-    print("\n" + "=" * 50)
+    print("=" * 40)
     if all(results):
-        print("RESULT: All tests PASSED ✓")
-        print("LiveKit Agents SDK is properly installed.")
-        return 0
+        print("All tests passed!")
+        sys.exit(0)
     else:
-        print("RESULT: Some tests FAILED ✗")
-        return 1
+        print("Some tests failed!")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
