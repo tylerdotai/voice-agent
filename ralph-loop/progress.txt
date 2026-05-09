@@ -24,3 +24,11 @@
   - Pattern: livekit-plugins-all is NOT a real package - plugins must be installed individually
   - Gotcha: docker-compose not available, but `docker compose` (v2) works
   - LiveKit Agents SDK supports MCP natively via @function_tool decorator
+
+- **Verification Results:**
+  - ✓ livekit-agents 1.5.8 installed
+  - ✓ livekit-plugins-langchain 1.5.8 installed
+  - ✓ Docker 29.1.3, Docker Compose 2.40.3 available
+  - ✓ test_livekit.py passes all tests
+
+- **Commit:** db539bc - feat: 1 - Install LiveKit Agents SDK
