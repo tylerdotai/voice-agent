@@ -46,7 +46,7 @@
       "id": 7,
       "title": "Build LangGraph Agent Orchestration Layer",
       "description": "Create ~/voice-agent/langgraph_agent/ with the core agentic layer: (1) Define VoiceAgentState schema with conversation history, current task, tool_results, interrupted flag. (2) Build graph with nodes: transcribe \u2192 route (intent detection) \u2192 respond (llama3.3 via Ollama streaming) \u2192 speak (TTS). (3) Add checkpointing with InMemorySaver for fault tolerance. (4) Add interrupt capability \u2014 supervisor can send signal to pause agent mid-turn. (5) Implement time-travel: given a thread_id, replay from any checkpoint. Document the graph structure in README.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
