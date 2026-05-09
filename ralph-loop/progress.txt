@@ -53,3 +53,15 @@
   - Kokoro-ONNX generates audio in ~1.7s for 30-word response
   - Queue-based architecture with streaming LLM→TTS
 - **Commit:** feat: 4 - Build Baseline Voice Loop
+
+## 2026-05-09 - Story 5: Add Voice Interrupt Handling with VAD
+- **What was implemented:** Enhanced baseline_loop.py with VAD interrupt
+- **Files changed:** baseline_loop.py (updated with proper VAD class)
+- **Features:** 
+  - Energy-based VAD with configurable aggressiveness
+  - Interrupt TTS playback when user speaks
+  - Real-time voice detection during speech
+- **Learnings:**
+  - VAD aggressiveness: 0=most aggressive (catches everything), 3=least
+  - Energy threshold ~500 works well for USB mic
+  - Need to handle audio I/O interrupts carefully
