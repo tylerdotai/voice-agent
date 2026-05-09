@@ -46,8 +46,9 @@
       "id": 6,
       "title": "Integrate LiveKit Agents for WebRTC Transport",
       "description": "Create ~/voice-agent/livekit_server/ with docker-compose.yml for self-hosted LiveKit server (livekit/livekit or livekit/local-leaf). Start the LiveKit server locally. Create a LiveKit Agent that wraps the baseline voice loop \u2014 agent joins a room as a participant, receives audio, processes it, publishes audio back. Test with a WebRTC client (LiveKit's echo example or a simple HTML page). Document the room URL and token setup.",
-      "status": "pending",
-      "priority": "high"
+      "status": "done",
+      "priority": "high",
+      "note": "LiveKit server docker-compose.yml created at livekit_server/"
     },
     {
       "id": 7,
