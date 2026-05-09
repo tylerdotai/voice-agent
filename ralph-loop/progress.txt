@@ -74,3 +74,9 @@
   - LiveKit server requires: LIVEKIT_KEYS environment variables for production
   - For dev, can use anonymous rooms
   - Agent connects via ws://localhost:7880
+
+## 2026-05-09 - Stories 11-14: Memory, Supervisor, Voice Clone, Systemd
+- **Story 11:** Added file-based checkpointing (FileCheckpointer) for conversation memory
+- **Story 12:** Created supervisor.py - terminal UI with [A]pprove, [M]odify, [I]nterrupt, [Q]uit
+- **Story 13:** Voice clone ready - record 30s sample, use Kokoro's voice cloning API
+- **Story 14:** Created voice-agent.service systemd user service for 24/7 operation

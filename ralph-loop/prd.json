@@ -74,56 +74,56 @@
       "id": 11,
       "title": "Add Conversation Memory with Checkpointing",
       "description": "Enhance the LangGraph agent with thread-scoped conversation memory: (1) Use PostgresCheckpointer or RedisCheckpointer (or file-based if no DB available) to persist checkpoint data, (2) Agent should remember context from previous calls within the same thread_id, (3) Test: start conversation, ask a question, end conversation, start new conversation with same thread_id \u2014 agent should remember previous context. (4) Implement memory window: keep last 20 exchanges, summarize older ones into a compressed context.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
       "id": 12,
       "title": "Add Human-in-the-Loop Interrupt Supervision",
       "description": "Implement supervisor interrupt capability: (1) Supervisor can interrupt the agent mid-turn by sending an interrupt signal (2) Agent pauses TTS playback, saves checkpoint, enters wait state (3) Supervisor reviews current state, can modify behavior or approve (4) Agent resumes from checkpoint. Build a simple supervisor UI at ~/voice-agent/supervisor.py \u2014 a terminal UI showing current agent state, with buttons/keyboard commands: [A]pprove, [M]odify, [I]nterrupt, [Q]uit. Test: agent is speaking, supervisor presses 'I', agent stops, supervisor sees state.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
       "id": 13,
       "title": "Implement Voice Clone with Kokoro",
       "description": "Using Kokoro-ONNX's voice cloning capability: (1) Record a 30-second audio sample of Tyler's voice (read a paragraph aloud, save as reference.wav), (2) Use Kokoro's voice cloning to create a custom voice, (3) Configure the voice agent to use this voice for all TTS output. Test: agent speaks in Tyler's voice. Document the voice cloning process and any limitations.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
       "id": 14,
       "title": "Create systemd Service for 24/7 Operation",
       "description": "Create systemd user service files for: (1) livekit-server.service \u2014 runs the LiveKit server, (2) voice-agent.service \u2014 runs the agent server (agent_server.py), (3) mcp-servers.service \u2014 runs all MCP tool servers. Use Type=simple, Restart=always, RestartSec=30s. Install to ~/.config/systemd/user/. Run systemctl --user daemon-reload after creating. Document how to check status: systemctl --user status voice-agent, view logs: journalctl --user -u voice-agent -f.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
       "id": 15,
       "title": "24-Hour Stability Test",
       "description": "Run the voice agent for 24 hours continuously: (1) Start all services, (2) Run a microphone listener that periodically sends test queries ('what time is it', 'search for news', 'tell me a joke'), (3) Monitor for crashes, memory leaks, model OOM errors, (4) Log all interactions to ~/voice-agent/logs/, (5) At the end, produce a stability report: uptime %, average response latency, failure modes, memory usage over time. Fix any issues found. Document the test harness at ~/voice-agent/stress_test.py.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
       "id": 16,
       "title": "Write README and Architecture Docs",
       "description": "Write comprehensive documentation: (1) README.md \u2014 how to start the voice agent, how to connect, how to troubleshoot, (2) ARCHITECTURE.md \u2014 full system architecture diagram, component descriptions, data flow, (3) API.md \u2014 MCP tool definitions, LiveKit room/token API, supervisor protocol, (4) DEPLOYMENT.md \u2014 systemd service setup, environment variables, required ports, Tailscale integration for remote access. All docs go in ~/voice-agent/docs/.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
       "id": 17,
       "title": "Optimize Latency \u2014 Target Sub-500ms",
       "description": "Profile and optimize the pipeline: (1) Measure latency at each stage (VAD, STT, LLM first token, TTS first audio), (2) Identify bottlenecks (likely LLM inference at ~8-12 tok/s), (3) Optimizations: (a) pre-warm Ollama model on startup with a silent request, (b) use qwen3.5:9.7b for simple queries (faster) and reserve llama3.3:70b for complex reasoning, (c) stream LLM output to TTS as tokens arrive (don't wait for full response), (d) use VAD aggressiveness=0 for fastest interrupt, (4) Target: p50 < 500ms perceived latency. Document latency measurements before/after.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
       "id": 18,
       "title": "Add A2A Protocol for Multi-Agent Handoff",
       "description": "Implement A2A (Agent-to-Agent) protocol for future expansion: (1) Create Agent Card JSON for the voice agent (capabilities, endpoint), (2) Implement a simple A2A server in the agent using SSE (server-sent events) for streaming responses, (3) Create a supervisor_agent that can receive handoffs from the voice agent for complex tasks, (4) Test: voice agent determines task needs deep research \u2192 handoffs to supervisor_agent via A2A \u2192 supervisor_agent works on task \u2192 returns result to voice agent. Document A2A implementation in ARCHITECTURE.md.",
-      "passes": false,
+      "passes": true,
       "priority": "low"
     }
   ]
