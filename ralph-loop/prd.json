@@ -53,21 +53,21 @@
       "id": 8,
       "title": "Connect LangGraph Agent to LiveKit Session",
       "description": "Write adapter layer ~/voice-agent/agent_server.py that bridges LiveKit AgentSession events (user spoke, agent finished speaking) to LangGraph graph invocations. Map LiveKit's agent_session.user_input_tts_data to LangGraph input. Map LangGraph output state to LiveKit's tts_options for TTS playback. Ensure streaming works end-to-end: user speaks \u2192 LiveKit delivers audio \u2192 LangGraph processes \u2192 TTS streams back \u2192 LiveKit plays. Test the full pipeline.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
       "id": 9,
       "title": "Implement Ollama Tool Calling for Agent",
       "description": "Add function calling to the LangGraph agent using Ollama's tool-calling API (POST /api/generate with tools parameter). Define these tools: (1) search_web(query) \u2014 calls SearXNG MCP server, (2) read_file(path) \u2014 reads file from disk, (3) run_command(cmd) \u2014 executes shell command, (4) get_time() \u2014 returns current time. Test: ask the agent 'what time is it' and verify it calls get_time tool. Ask 'search for weather' and verify search_web is called. Ensure tool results are incorporated into the response.",
-      "passes": false,
+      "passes": true,
       "priority": "high"
     },
     {
       "id": 10,
       "title": "Build MCP Server for Local Tools (SearXNG, Filesystem, Shell)",
       "description": "Create ~/voice-agent/mcp_servers/ with MCP tool servers: (1) searxng_mcp \u2014 wraps SearXNG at localhost:8888, exposes search(query) tool, (2) filesystem_mcp \u2014 exposes read_file, write_file, list_directory tools for ~/ directory, (3) shell_mcp \u2014 exposes run_command(cmd) for running shell commands. Each should follow MCP stdio transport. Register them in a mcp_servers.json config file. Test by connecting Claude Code to them with `claude mcp add`.",
-      "passes": false,
+      "passes": true,
       "priority": "medium"
     },
     {
