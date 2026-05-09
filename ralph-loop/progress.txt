@@ -1,0 +1,26 @@
+# Ralph Progress Tracker - Dexter Voice Agent
+
+## Codebase Patterns
+- STT: Faster-Whisper small model, int8 compute
+- TTS: Kokoro-ONNX with voices-v1.0.bin
+- LLM: Ollama at localhost:11434, qwen2.5:0.5b for fast voice responses
+- MiniMax API: https://api.minimax.io/v1/chat/completions
+- LiveKit: livekit-agents 1.5.8, livekit-plugins-openai, livekit-plugins-anthropic
+- Docker: Available (docker 29.1.3, compose 2.40.3)
+
+## Stories Progress
+
+## 2026-05-09 - Story 1: Install LiveKit Agents SDK
+- What was implemented
+  - Verified livekit-agents 1.5.8 already installed
+  - Verified livekit-plugins-openai and livekit-plugins-anthropic installed  
+  - Confirmed docker and docker-compose available for LiveKit server deployment
+  - Created test_livekit.py echo test that validates all imports and API functionality
+  
+- Files changed
+  - Created test_livekit.py
+  
+- **Learnings:**
+  - Pattern: livekit-plugins-all is NOT a real package - plugins must be installed individually
+  - Gotcha: docker-compose not available, but `docker compose` (v2) works
+  - LiveKit Agents SDK supports MCP natively via @function_tool decorator
