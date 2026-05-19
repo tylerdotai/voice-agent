@@ -23,7 +23,7 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 # Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
 
-# What to backup
+# What to backup (only files that exist)
 CONFIG_FILES=(
     "baseline_loop.py"
     "langgraph_agent/"
@@ -35,8 +35,12 @@ CONFIG_FILES=(
     "failover_test.py"
     "prd.json"
     "AGENTS.md"
-    "requirements.txt"
     "install.sh"
+    "update.sh"
+    "sip_bridge.py"
+    "a2a_protocol.py"
+    "stress_test.py"
+    "supervisor.py"
 )
 
 # What to exclude (large/runtime files)
@@ -59,14 +63,16 @@ log "Creating backup: $BACKUP_NAME"
 # Create backup
 cd "$INSTALL_DIR"
 
-# Build tar command
+# Build tar command - backup entire directory minus exclusions
 TAR_CMD="tar -czf '$BACKUP_PATH'"
+
+# Add exclusion patterns
 for pattern in "${EXCLUDE_PATTERNS[@]}"; do
     TAR_CMD="$TAR_CMD $pattern"
 done
-for file in "${CONFIG_FILES[@]}"; do
-    TAR_CMD="$TAR_CMD '$file'"
-done
+
+# Backup everything in current directory
+TAR_CMD="$TAR_CMD ."
 
 eval "$TAR_CMD"
 
@@ -74,8 +80,6 @@ eval "$TAR_CMD"
 BACKUP_SIZE=$(du -h "$BACKUP_PATH" | cut -f1)
 
 log "Backup created: $BACKUP_PATH ($BACKUP_SIZE)"
-
-# Create latest symlink
 ln -sf "$BACKUP_PATH" "$BACKUP_DIR/voice-agent_latest.tar.gz"
 log "Latest symlink updated: $BACKUP_DIR/voice-agent_latest.tar.gz"
 
