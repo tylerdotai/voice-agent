@@ -1,16 +1,7 @@
 """Voice Agent Graph using LangGraph."""
-from typing import Literal
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
-
-class VoiceAgentState:
-    """State schema for the voice agent graph."""
-    def __init__(self):
-        self.conversation_history: list = []
-        self.current_task: str = ""
-        self.tool_results: dict = {}
-        self.interrupted: bool = False
-        self.response_text: str = ""
+from .nodes import VoiceAgentState, transcribe_node, route_node, respond_node, speak_node
 
 def create_voice_agent():
     """Create and compile the voice agent graph."""
@@ -33,4 +24,6 @@ def create_voice_agent():
     
     # Compile with checkpointing
     checkpointer = InMemorySaver()
-    return builder.compile(checkpointer=checkpointer)
+    VoiceAgent = builder.compile(checkpointer=checkpointer)
+    
+    return VoiceAgent

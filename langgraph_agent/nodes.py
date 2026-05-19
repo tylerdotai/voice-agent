@@ -1,9 +1,20 @@
 """Nodes for the voice agent graph."""
 import requests
 import json
+from typing import Literal
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 LLM_MODEL = "qwen2.5:0.5b"
+
+class VoiceAgentState:
+    """State schema for the voice agent graph."""
+    def __init__(self):
+        self.conversation_history: list = []
+        self.current_task: str = ""
+        self.tool_results: dict = {}
+        self.interrupted: bool = False
+        self.response_text: str = ""
+        self.route_target: str = "general"
 
 def transcribe_node(state: VoiceAgentState) -> VoiceAgentState:
     """Transcribe audio to text."""

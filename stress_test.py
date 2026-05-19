@@ -32,7 +32,9 @@ def check_ollama():
     try:
         r = requests.get("http://localhost:11434/api/tags", timeout=5)
         return r.status_code == 200
-    except:
+    except requests.RequestException:
+        return False
+    except Exception:
         return False
 
 def check_tts():
@@ -40,7 +42,9 @@ def check_tts():
         from kokoro_onnx import Kokoro
         k = Kokoro("/home/tyler/kokoro-onnx/kokoro-v1.0.onnx", "/home/tyler/kokoro-onnx/voices-v1.0.bin")
         return True
-    except:
+    except ImportError:
+        return False
+    except Exception:
         return False
 
 def run_test_query(query):

@@ -52,23 +52,31 @@ running = True
 current_audioPlaying = False
 
 class VoiceLoop:
+    # Class-level model caching (singleton pattern)
+    _stt_model = None
+    _tts_model = None
+    
     def __init__(self):
         self.audio_queue = queue.Queue()
         self.text_queue = queue.Queue()
         self.tts_queue = queue.Queue()
         self.running = True
         
-        # Initialize STT
-        print("Loading Faster-Whisper STT model...")
-        from faster_whisper import WhisperModel
-        self.stt_model = WhisperModel(STT_MODEL_SIZE, device="cpu", compute_type="int8")
-        print("STT ready")
+        # Initialize STT (cached singleton)
+        if VoiceLoop._stt_model is None:
+            print("Loading Faster-Whisper STT model...")
+            from faster_whisper import WhisperModel
+            VoiceLoop._stt_model = WhisperModel(STT_MODEL_SIZE, device="cpu", compute_type="int8")
+            print("STT ready")
+        self.stt_model = VoiceLoop._stt_model
         
-        # Initialize TTS
-        print("Loading Kokoro-ONNX TTS...")
-        from kokoro_onnx import Kokoro
-        self.tts = Kokoro(KOKORO_ONNX_PATH, KOKORO_VOICES_PATH)
-        print(f"TTS ready with {len(self.tts.voices)} voices")
+        # Initialize TTS (cached singleton)
+        if VoiceLoop._tts_model is None:
+            print("Loading Kokoro-ONNX TTS...")
+            from kokoro_onnx import Kokoro
+            VoiceLoop._tts_model = Kokoro(KOKORO_ONNX_PATH, KOKORO_VOICES_PATH)
+            print(f"TTS ready with {len(VoiceLoop._tts_model.voices)} voices")
+        self.tts = VoiceLoop._tts_model
         
     def get_audio_devices(self):
         """List available audio input devices."""
@@ -158,9 +166,17 @@ class VoiceLoop:
         text = " ".join(segment.text for segment in segments)
         return text.strip()
     
+    MAX_INPUT_LENGTH = 500  # Max characters from user
+
     def generate_response(self, text):
         """Generate response using Ollama with streaming."""
-        prompt = f"You are a helpful voice assistant. Reply in 50 words or less. User said: {text}"
+        # Input validation - prevent resource exhaustion
+        if not text or len(text) > MAX_INPUT_LENGTH:
+            return "Sorry, I couldn't process that."
+        
+        # Sanitize input - escape any prompt injection attempts
+        sanitized_text = text.replace("{", "{{").replace("}", "}}")
+        prompt = f"You are a helpful voice assistant. Reply in 50 words or less. User said: {sanitized_text}"
         
         try:
             response = requests.post(
