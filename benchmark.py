@@ -619,7 +619,7 @@ class VoiceAgentBenchmarks:
 
     def tier5_audit_logging(self) -> BenchmarkResult:
         """Are all interactions logged for compliance?"""
-        # Check if stress_test.py logs are being written
+        # Check whether compliance/runtime logs exist.
         import os
         log_dir = "/home/tyler/voice-agent/logs"
         has_logs = os.path.exists(log_dir) and len(os.listdir(log_dir)) > 0

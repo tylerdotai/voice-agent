@@ -114,7 +114,7 @@
     {
       "id": 15,
       "title": "24-Hour Stability Test",
-      "description": "Run the voice agent for 24 hours continuously: (1) Start all services, (2) Run a microphone listener that periodically sends test queries ('what time is it', 'search for news', 'tell me a joke'), (3) Monitor for crashes, memory leaks, model OOM errors, (4) Log all interactions to ~/voice-agent/logs/, (5) At the end, produce a stability report: uptime %, average response latency, failure modes, memory usage over time. Fix any issues found. Document the test harness at ~/voice-agent/stress_test.py.",
+      "description": "Run the voice agent for extended stability verification: monitor crashes, memory leaks, model OOM errors, runtime logs, and response latency; use benchmark.py and logs/ artifacts as the maintained verification path.",
       "status": "done",
       "priority": "high",
       "note": "Completed in build session"

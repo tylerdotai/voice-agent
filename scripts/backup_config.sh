@@ -39,7 +39,6 @@ CONFIG_FILES=(
     "update.sh"
     "sip_bridge.py"
     "a2a_protocol.py"
-    "stress_test.py"
     "supervisor.py"
 )
 
