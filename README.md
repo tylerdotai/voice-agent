@@ -79,7 +79,7 @@ A production-ready, fully self-hosted voice AI agent built for local deployment.
 ### Benchmark Suite
 - 20 automated tests across 5 tiers
 - Component health, E2E pipeline, streaming TTFT, tool calling, multilingual, concurrent load, adversarial input
-- Run with `python benchmark.py --verbose`
+- Run with `.venv/bin/python benchmark.py --verbose`
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -183,16 +183,16 @@ cd livekit_server && docker compose up -d
 ### Quick Start
 ```bash
 # Run the voice agent
-python baseline_loop.py
+.venv/bin/python baseline_loop.py
 
 # Run benchmark suite
-python benchmark.py --verbose
+.venv/bin/python benchmark.py --verbose
 
 # Run specific tier
-python benchmark.py --tier 3
+.venv/bin/python benchmark.py --tier 3
 
 # Run supervisor UI
-python supervisor.py
+.venv/bin/python supervisor.py
 ```
 
 ### Systemd Service (24/7)
@@ -205,9 +205,11 @@ journalctl --user -u voice-agent -f
 
 ### VAD Configuration (baseline_loop.py)
 ```python
-SAMPLE_RATE = 16000
-SILENCE_THRESHOLD = 500   # increase for louder environments
-SILENCE_FRAMES = 15       # frames of silence before end-of-speech
+VoiceConfig(
+    sample_rate=16000,
+    silence_threshold=500,  # increase for louder environments
+    silence_frames=15,      # frames of silence before end-of-speech
+)
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -215,15 +217,15 @@ SILENCE_FRAMES = 15       # frames of silence before end-of-speech
 <!-- BENCHMARK -->
 ## Benchmark
 
-Run `python benchmark.py --verbose` for full output.
+Run `.venv/bin/python benchmark.py --verbose` for full output.
 
-**Current: 19/20 passed | Avg Score: 106.2/100**
+**Current expected result: 19/20 passed**
 
 | Tier | Tests | Status |
 |------|-------|--------|
 | 1 | Component health (Ollama, STT, TTS, VAD) | 4/4 |
 | 2 | Basic E2E (STT, LLM response, TTS) | 3/3 |
-| 3 | Moderate (TTFT 87ms, tool calling, multilingual, memory) | 4/4 |
+| 3 | Moderate (streaming TTFT, tool calling, multilingual, memory) | 4/4 |
 | 4 | Complex (noisy STT*, concurrent 20 users, long context, adversarial) | 3/4 |
 | 5 | Enterprise (PII, audit, failover, SLA, data sovereignty) | 5/5 |
 
