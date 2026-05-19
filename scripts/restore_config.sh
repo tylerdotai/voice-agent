@@ -63,9 +63,16 @@ tar -czf "$PRE_BACKUP" \
 
 log "Pre-restore backup created"
 
-# Extract backup
+# Extract backup with path traversal protection
 log "Extracting backup..."
-tar -xzf "$BACKUP_FILE" -C "$INSTALL_DIR"
+# Use --strip-components=1 to prevent path traversal attacks
+# This strips any leading paths, so files can only be extracted to $INSTALL_DIR/
+tar -xzf "$BACKUP_FILE" --strip-components=1 -C "$INSTALL_DIR"
+
+# Verify no files were extracted outside INSTALL_DIR (additional safety check)
+if [ -f "$INSTALL_DIR/../../etc/passwd" ] || [ -d "$INSTALL_DIR/../" ]; then
+    error "Path traversal detected in backup! Aborting."
+fi
 
 # Verify key files exist
 KEY_FILES=("baseline_loop.py" "AGENTS.md" "requirements.txt")

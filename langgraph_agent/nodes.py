@@ -1,10 +1,21 @@
 """Nodes for the voice agent graph."""
 import requests
 import json
-from typing import Literal
+from dataclasses import dataclass
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-LLM_MODEL = "qwen2.5:0.5b"
+LLM_MODEL = "qwen2.5:1.5b"  # Must match baseline_loop.py
+
+
+def format_error_response(reason: str) -> str:
+    """Format user-friendly error responses."""
+    messages = {
+        "connection": "Sorry, the AI service is not available.",
+        "timeout": "Sorry, the AI service is taking too long.",
+        "invalid_data": "Sorry, the AI service returned invalid data.",
+        "unknown": "Sorry, I encountered an error.",
+    }
+    return messages.get(reason, messages["unknown"])
 
 class VoiceAgentState:
     """State schema for the voice agent graph."""
@@ -51,20 +62,20 @@ def respond_node(state: VoiceAgentState) -> VoiceAgentState:
 
         if not state.response_text:
             print("Warning: Empty response from LLM")
-            state.response_text = "Sorry, I couldn't generate a response."
+            state.response_text = format_error_response("unknown")
 
     except requests.exceptions.ConnectionError:
         print("Error: Cannot connect to Ollama")
-        state.response_text = "Sorry, the AI service is not available."
+        state.response_text = format_error_response("connection")
     except requests.exceptions.Timeout:
         print("Error: Ollama request timed out")
-        state.response_text = "Sorry, the AI service is taking too long."
+        state.response_text = format_error_response("timeout")
     except json.JSONDecodeError as e:
         print(f"Error: Malformed JSON from Ollama: {e}")
-        state.response_text = "Sorry, the AI service returned invalid data."
+        state.response_text = format_error_response("invalid_data")
     except Exception as e:
         print(f"Unexpected error in respond_node: {e}")
-        state.response_text = "Sorry, I encountered an error."
+        state.response_text = format_error_response("unknown")
 
     return state
 
