@@ -1,0 +1,43 @@
+# Local environments and dependency caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Local runtime artifacts
+logs/*.log
+logs/*.jsonl
+*.log
+*.pid
+*.tmp
+.tmp/
+data/
+
+# Backups and generated archives
+*.tar.gz
+*.tgz
+*.zip
+.pre_restore_backup_*.tar.gz
+voice-agent-backups/
+
+# Downloaded / generated model artifacts
+models/
+*.onnx
+*.bin
+*.pt
+*.pth
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -7,13 +7,14 @@ For SMBs with existing phone systems - just connect to their Asterisk box.
 """
 
 import asyncio
+import os
 import socket
 import json
 import wave
 import struct
 import logging
 from typing import Optional, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 # Configure logging
@@ -47,13 +48,13 @@ class CallState(Enum):
 @dataclass
 class CallConfig:
     """Configuration for SIP bridge"""
-    asterisk_host: str = "localhost"
-    asterisk_port: int = 5038
-    asterisk_user: str = "voiceagent"
-    asterisk_password: str = "secret"
-    sip_extension: str = "6000"
-    sip_password: str = ""
-    context: str = "voice-agent"
+    asterisk_host: str = field(default_factory=lambda: os.getenv("ASTERISK_HOST", "localhost"))
+    asterisk_port: int = field(default_factory=lambda: int(os.getenv("ASTERISK_PORT", "5038")))
+    asterisk_user: str = field(default_factory=lambda: os.getenv("ASTERISK_USER", "voiceagent"))
+    asterisk_password: str = field(default_factory=lambda: os.getenv("ASTERISK_PASSWORD", ""))
+    sip_extension: str = field(default_factory=lambda: os.getenv("SIP_EXTENSION", "6000"))
+    sip_password: str = field(default_factory=lambda: os.getenv("SIP_PASSWORD", ""))
+    context: str = field(default_factory=lambda: os.getenv("SIP_CONTEXT", "voice-agent"))
     audio_sample_rate: int = 8000
     max_call_duration_seconds: int = 600
 

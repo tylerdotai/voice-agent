@@ -26,10 +26,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    deploy:
-      resources:
-        # Reserve adequate resources for LLM inference
-        memory: 8G
+    # Reserve adequate memory for LLM inference in standard Docker Compose.
+    mem_limit: 8g
 
   # ============================================
   # Voice Agent - Main Application
@@ -87,8 +85,8 @@ services:
       - "7881:7881"
       - "7882:7882/udp"
     environment:
-      - LIVEKIT_KEYS=devkey,secret
-      - LIVEKIT_REGION=us-east-1
+      - LIVEKIT_KEYS=${LIVEKIT_KEYS}
+      - LIVEKIT_REGION=${LIVEKIT_REGION:-us-east-1}
     volumes:
       - ./livekit_server/config.yaml:/etc/livekit.yaml:ro
     command: --config /etc/livekit.yaml

@@ -1,5 +1,5 @@
 keys:
-  devkey: rootsecret
+  devkey: replace-with-random-secret
 
 logging:
   level: debug

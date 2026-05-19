@@ -7,9 +7,9 @@ services:
       - "7881:7881"
       - "7882:7882/udp"
     environment:
-      - LIVEKIT_KEYS=devkey:rootsecret
-      - LIVEKIT_SECRET=rootsecret
-      - LIVEKIT_DEV_MODE=true
+      - LIVEKIT_KEYS=${LIVEKIT_KEYS}
+      - LIVEKIT_SECRET=${LIVEKIT_SECRET}
+      - LIVEKIT_DEV_MODE=${LIVEKIT_DEV_MODE:-true}
     volumes:
       - ./config.yml:/etc/livekit.yaml
     command: --config /etc/livekit.yaml
