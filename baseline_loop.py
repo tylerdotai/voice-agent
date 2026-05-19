@@ -95,17 +95,17 @@ class VoiceLoop:
     def record_until_silence(self, device_index=None):
         """Record audio from microphone until silence is detected."""
         import sounddevice as sd
-        
+
         silence_count = 0
         audio_frames = []
-        
+
         def callback(indata, frames, time, status):
             if status:
                 print(f"Audio status: {status}")
-            
+
             # Calculate energy
             energy = self.energy_level(indata.tobytes())
-            
+
             if energy > SILENCE_THRESHOLD:
                 audio_frames.append(indata.copy())
                 silence_count = 0
@@ -114,8 +114,14 @@ class VoiceLoop:
                     silence_count += 1
                     if silence_count < SILENCE_FRAMES:
                         audio_frames.append(indata.copy())
-        
+
         try:
+            # Check if device exists
+            devices = sd.query_devices()
+            if device_index is not None and device_index >= len(devices):
+                print(f"Warning: Device {device_index} not found, using default")
+                device_index = None
+
             with sd.InputStream(
                 device=device_index,
                 channels=1,
@@ -127,25 +133,28 @@ class VoiceLoop:
                 # Wait for first speech
                 while silence_count < 3 and self.running:
                     time.sleep(0.1)
-                
+
                 if not self.running:
                     return None
-                
+
                 # Continue recording until silence
                 while silence_count < SILENCE_FRAMES and self.running:
                     time.sleep(0.05)
-            
+
             if not self.running:
                 return None
-            
+
             # Concatenate all frames
             if audio_frames:
                 import numpy as np
                 audio_data = np.concatenate(audio_frames)
                 return audio_data.tobytes()
-            
+
             return None
-            
+
+        except sd.PortAudioError as e:
+            print(f"Audio device error: {e}")
+            return None
         except Exception as e:
             print(f"Recording error: {e}")
             return None
@@ -173,11 +182,11 @@ class VoiceLoop:
         # Input validation - prevent resource exhaustion
         if not text or len(text) > MAX_INPUT_LENGTH:
             return "Sorry, I couldn't process that."
-        
+
         # Sanitize input - escape any prompt injection attempts
         sanitized_text = text.replace("{", "{{").replace("}", "}}")
         prompt = f"You are a helpful voice assistant. Reply in 50 words or less. User said: {sanitized_text}"
-        
+
         try:
             response = requests.post(
                 OLLAMA_URL,
@@ -185,18 +194,36 @@ class VoiceLoop:
                 timeout=30,
                 stream=True
             )
-            
+            response.raise_for_status()
+
             full_response = ""
             for line in response.iter_lines():
                 if line:
-                    data = json.loads(line)
-                    if 'response' in data:
-                        full_response += data['response']
-                        # Put partial response in queue for TTS
-                        self.tts_queue.put(full_response)
-            
+                    try:
+                        data = json.loads(line)
+                        if 'response' in data:
+                            full_response += data['response']
+                            # Put partial response in queue for TTS
+                            self.tts_queue.put(full_response)
+                    except json.JSONDecodeError:
+                        # Skip malformed JSON lines
+                        continue
+
+            if not full_response:
+                print("Warning: Empty response from LLM")
+                return "Sorry, I couldn't generate a response."
+
             return full_response.strip()
-            
+
+        except requests.exceptions.ConnectionError:
+            print("Error: Cannot connect to Ollama. Is it running?")
+            return "Sorry, the AI service is not available."
+        except requests.exceptions.Timeout:
+            print("Error: Ollama request timed out")
+            return "Sorry, the AI service is taking too long."
+        except requests.exceptions.HTTPError as e:
+            print(f"Error: HTTP error from Ollama: {e}")
+            return "Sorry, the AI service encountered an error."
         except Exception as e:
             print(f"LLM error: {e}")
             return "Sorry, I couldn't process that."

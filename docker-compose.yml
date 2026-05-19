@@ -1,0 +1,120 @@
+# Voice Agent Docker Compose
+# One-command deployment for local voice AI
+#
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose logs -f       # View logs
+#   docker compose down          # Stop services
+
+services:
+  # ============================================
+  # Ollama - Local LLM Inference Server
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voice-agent-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        # Reserve adequate resources for LLM inference
+        memory: 8G
+
+  # ============================================
+  # Voice Agent - Main Application
+  # ============================================
+  voice-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voice-agent
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "7880:7880"  # LiveKit WebSocket
+      - "8888:8888"  # SearXNG (optional MCP tool)
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - KOKORO_ONNX_PATH=/models/kokoro-v1.0.onnx
+      - KOKORO_VOICES_PATH=/models/voices-v1.0.bin
+      - VOICE_AGENT_MODEL=qwen2.5:1.5b
+      - SAMPLE_RATE=16000
+      - SILENCE_THRESHOLD=500
+      - SILENCE_FRAMES=15
+    volumes:
+      # Mount model files (download separately)
+      - ./models:/models:ro
+      # Persist logs
+      - ./logs:/app/logs
+      # Persist conversation history
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:11434/api/tags')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: gpu
+              count: all
+              capabilities: [gpu]
+
+  # ============================================
+  # LiveKit Server (Optional - for WebRTC)
+  # ============================================
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: voice-agent-livekit
+    restart: unless-stopped
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    environment:
+      - LIVEKIT_KEYS=devkey,secret
+      - LIVEKIT_REGION=us-east-1
+    volumes:
+      - ./livekit_server/config.yaml:/etc/livekit.yaml:ro
+    command: --config /etc/livekit.yaml
+
+  # ============================================
+  # SearXNG - Private Web Search (Optional MCP tool)
+  # ============================================
+  searxng:
+    image: searxng/searxng:latest
+    container_name: voice-agent-searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+
+# ============================================
+# Volumes - Persist data between restarts
+# ============================================
+volumes:
+  ollama_data:
+    driver: local
+
+networks:
+  default:
+    name: voice-agent-network
+    driver: bridge

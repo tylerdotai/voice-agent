@@ -38,18 +38,34 @@ def route_node(state: VoiceAgentState) -> VoiceAgentState:
 def respond_node(state: VoiceAgentState) -> VoiceAgentState:
     """Generate response using Ollama."""
     prompt = f"You are a helpful voice assistant. Reply in 50 words or less. User said: {state.current_task}"
-    
+
     try:
         response = requests.post(
             OLLAMA_URL,
             json={"model": LLM_MODEL, "prompt": prompt, "stream": False},
             timeout=30
         )
+        response.raise_for_status()
         result = json.loads(response.text)
         state.response_text = result.get('response', '').strip()
+
+        if not state.response_text:
+            print("Warning: Empty response from LLM")
+            state.response_text = "Sorry, I couldn't generate a response."
+
+    except requests.exceptions.ConnectionError:
+        print("Error: Cannot connect to Ollama")
+        state.response_text = "Sorry, the AI service is not available."
+    except requests.exceptions.Timeout:
+        print("Error: Ollama request timed out")
+        state.response_text = "Sorry, the AI service is taking too long."
+    except json.JSONDecodeError as e:
+        print(f"Error: Malformed JSON from Ollama: {e}")
+        state.response_text = "Sorry, the AI service returned invalid data."
     except Exception as e:
-        state.response_text = "Sorry, I couldn't process that."
-    
+        print(f"Unexpected error in respond_node: {e}")
+        state.response_text = "Sorry, I encountered an error."
+
     return state
 
 def speak_node(state: VoiceAgentState) -> VoiceAgentState:

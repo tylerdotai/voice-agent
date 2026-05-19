@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation (keep README.md)
+*.md
+!README.md
+
+# Test files
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Large model files (mounted at runtime)
+*.onnx
+*.bin
+*.pt
+*.pth
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Backup files
+*.bak
+*.backup
+
+# Development files
+.env.local
+.env.development
+docker-compose.override.yml
