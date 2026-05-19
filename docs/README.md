@@ -18,6 +18,16 @@ curl -fsSL https://install.voice-agent.local | bash
 docker compose up -d
 ```
 
+## System Requirements
+
+| Profile | CPU | RAM | Disk | Notes |
+|---------|-----|-----|------|-------|
+| Minimum | 4 cores | 8GB | 10GB free | Basic local voice loop with small local models |
+| Recommended | 8+ cores | 16GB+ | 20GB+ free | Better latency headroom and smoother TTS/STT |
+| Optional GPU | AMD or NVIDIA | 16GB+ system RAM | 20GB+ free | Helps TTS acceleration; CPU-only still works |
+
+Runtime prerequisites: Linux (Ubuntu 22.04/24.04 preferred), Python 3.12+, Ollama at `http://localhost:11434`, `qwen2.5:1.5b`, local Kokoro model/voice files, and microphone/speaker or SIP input.
+
 ## Architecture
 
 ```
@@ -53,14 +63,13 @@ curl -fsSL https://ollama.ai/install.sh | sudo sh
 git clone https://github.com/tylerdotai/voice-agent.git
 cd voice-agent
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt
 
 # 4. Pull model
 ollama pull qwen2.5:1.5b
 
 # 5. Run
-python baseline_loop.py
+.venv/bin/python baseline_loop.py
 ```
 
 ### Docker Installation

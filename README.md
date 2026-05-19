@@ -136,10 +136,25 @@ Microphone → Energy VAD → Faster-Whisper STT → Ollama LLM (qwen2.5:1.5b)
 
 ### Prerequisites
 
+- Linux host, preferably Ubuntu 22.04/24.04
 - Python 3.12+
 - Ollama running locally (`http://localhost:11434`)
-- Kokoro ONNX model at `/home/tyler/kokoro-onnx/kokoro-v1.0.onnx`
-- 8GB+ RAM for basic operation
+- Default verified model: `qwen2.5:1.5b`
+- Microphone and speaker for local voice-loop use, or SIP/phone input for telephony integration
+- Kokoro ONNX files available locally:
+  - model: `/home/tyler/kokoro-onnx/kokoro-v1.0.onnx`
+  - voices: `/home/tyler/kokoro-onnx/voices-v1.0.bin`
+- Internet access for initial dependency/model download only
+
+### System Requirements
+
+| Profile | CPU | RAM | Disk | Notes |
+|---------|-----|-----|------|-------|
+| Minimum | 4 cores | 8GB | 10GB free | Basic local voice loop with small local models |
+| Recommended | 8+ cores | 16GB+ | 20GB+ free | Better latency headroom and smoother TTS/STT |
+| Optional GPU | AMD or NVIDIA | 16GB+ system RAM | 20GB+ free | Helps TTS acceleration; CPU-only still works |
+
+A practical SMB target is a mini PC / NUC-style box with Ubuntu 24.04, 16GB RAM, 4–8 CPU cores, and 20GB+ free disk.
 
 ### Installation
 

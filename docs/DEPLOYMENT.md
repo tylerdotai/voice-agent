@@ -2,14 +2,29 @@
 
 ## Prerequisites
 
-- Linux (Ubuntu 24.04 recommended)
+- Linux host, preferably Ubuntu 22.04/24.04
 - Python 3.12+
-- 8GB+ RAM
-- Microphone and speakers
+- Ollama reachable at `http://localhost:11434`
+- Default verified model: `qwen2.5:1.5b`
+- Microphone and speakers for local voice-loop use, or SIP/phone input for telephony integration
+- Kokoro ONNX files available locally:
+  - model: `/home/tyler/kokoro-onnx/kokoro-v1.0.onnx`
+  - voices: `/home/tyler/kokoro-onnx/voices-v1.0.bin`
+
+### Hardware Requirements
+
+| Profile | CPU | RAM | Disk | Notes |
+|---------|-----|-----|------|-------|
+| Minimum | 4 cores | 8GB | 10GB free | Basic local voice loop with small local models |
+| Recommended | 8+ cores | 16GB+ | 20GB+ free | Better latency headroom and smoother TTS/STT |
+| Optional GPU | AMD or NVIDIA | 16GB+ system RAM | 20GB+ free | Helps TTS acceleration; CPU-only still works |
+
+A practical SMB box is a mini PC / NUC-style machine with Ubuntu 24.04, 16GB RAM, 4–8 CPU cores, and 20GB+ free disk.
 
 Optional:
 - GPU (NVIDIA or AMD) for faster TTS
 - Asterisk/FreePBX for phone integration
+- SIP support may require system-level PJSIP build prerequisites because `requirements.txt` includes `pjsua2`.
 
 ## Installation Methods
 
@@ -55,14 +70,13 @@ curl -fsSL https://ollama.ai/install.sh | sudo sh
 git clone https://github.com/tylerdotai/voice-agent.git
 cd voice-agent
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt
 
 # Pull model
 ollama pull qwen2.5:1.5b
 
 # Run
-python baseline_loop.py
+.venv/bin/python baseline_loop.py
 ```
 
 ## Systemd Service (24/7)
@@ -151,5 +165,5 @@ sudo ufw allow 8888/tcp
 - [ ] Model is available (`ollama list`)
 - [ ] Microphone is working
 - [ ] TTS is working (run test)
-- [ ] Benchmark passes (`python benchmark.py`)
+- [ ] Benchmark passes (`.venv/bin/python benchmark.py`)
 - [ ] Service is enabled for auto-start (`systemctl enable voice-agent`)
