@@ -1,8 +1,9 @@
 """Filesystem MCP Server for reading/writing files."""
-import os
+
 from pathlib import Path
 
 BASE_DIR = Path("/home/tyler")
+
 
 def read_file(path: str) -> str:
     """Read a file from disk."""
@@ -11,6 +12,7 @@ def read_file(path: str) -> str:
         return full_path.read_text()
     except Exception as e:
         return f"Error: {e}"
+
 
 def write_file(path: str, content: str) -> str:
     """Write content to a file."""
@@ -22,6 +24,7 @@ def write_file(path: str, content: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
+
 def list_directory(path: str = ".") -> list:
     """List directory contents."""
     try:
@@ -29,6 +32,7 @@ def list_directory(path: str = ".") -> list:
         return [str(p.name) for p in full_path.iterdir()]
     except Exception as e:
         return [f"Error: {e}"]
+
 
 if __name__ == "__main__":
     print("Filesystem MCP Server")

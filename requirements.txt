@@ -1,6 +1,5 @@
 faster-whisper>=1.0.0
-kokoro-onnx>=0.9.0
+kokoro-onnx>=0.5.0,<0.6.0
 requests>=2.31.0
 langgraph>=0.0.20
 onnxruntime-rocm>=1.18.0
-pjsua2  # For SIP bridge

@@ -16,12 +16,12 @@ Architecture:
   Speaker ← Kokoro-ONNX TTS ← Response text
 """
 
-import queue
 import threading
 import signal
 import time
 import struct
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass
 from typing import Optional
 import requests
 import numpy as np
@@ -30,9 +30,11 @@ import numpy as np
 # Configuration
 # ============================================================================
 
+
 @dataclass
 class VoiceConfig:
     """Voice agent configuration."""
+
     # Audio settings
     sample_rate: int = 16000
     chunk_size: int = 1024  # samples per chunk
@@ -66,6 +68,7 @@ CONFIG = VoiceConfig()
 # Singleton Model Cache (Thread-Safe)
 # ============================================================================
 
+
 class ModelCache:
     """Thread-safe singleton model cache."""
 
@@ -81,7 +84,10 @@ class ModelCache:
                 if self._stt_model is None:  # Double-check after lock
                     print(f"Loading Faster-Whisper STT model ({model_size})...")
                     from faster_whisper import WhisperModel
-                    self._stt_model = WhisperModel(model_size, device="cpu", compute_type=compute_type)
+
+                    self._stt_model = WhisperModel(
+                        model_size, device="cpu", compute_type=compute_type
+                    )
                     print("STT ready")
         return self._stt_model
 
@@ -90,8 +96,9 @@ class ModelCache:
         if self._tts_model is None:
             with self._lock:
                 if self._tts_model is None:  # Double-check after lock
-                    print(f"Loading Kokoro-ONNX TTS...")
+                    print("Loading Kokoro-ONNX TTS...")
                     from kokoro_onnx import Kokoro
+
                     self._tts_model = Kokoro(model_path, voices_path)
                     print(f"TTS ready with {len(self._tts_model.voices)} voices")
         return self._tts_model
@@ -104,6 +111,7 @@ MODEL_CACHE = ModelCache()
 # ============================================================================
 # Error Response Formatting
 # ============================================================================
+
 
 def format_error_response(reason: str) -> str:
     """Format user-friendly error responses."""
@@ -123,6 +131,7 @@ def format_error_response(reason: str) -> str:
 # Voice Loop
 # ============================================================================
 
+
 class VoiceLoop:
     """Main voice processing loop with thread-safe shutdown."""
 
@@ -132,18 +141,15 @@ class VoiceLoop:
         self._shutdown_event = threading.Event()
 
         # Get singleton models (thread-safe)
-        self.stt_model = MODEL_CACHE.get_stt_model(
-            config.stt_model_size, "int8"
-        )
-        self.tts = MODEL_CACHE.get_tts_model(
-            config.kokoro_onnx_path, config.kokoro_voices_path
-        )
+        self.stt_model = MODEL_CACHE.get_stt_model(config.stt_model_size, "int8")
+        self.tts = MODEL_CACHE.get_tts_model(config.kokoro_onnx_path, config.kokoro_voices_path)
 
     def get_audio_devices(self):
         """List available audio input devices."""
         import sounddevice as sd
+
         devices = sd.query_devices()
-        inputs = [d for d in devices if d['max_input_channels'] > 0]
+        inputs = [d for d in devices if d["max_input_channels"] > 0]
         return inputs
 
     def energy_level(self, data: bytes) -> float:
@@ -151,7 +157,7 @@ class VoiceLoop:
 
         Optimized: uses struct.unpack which is faster than numpy for small chunks.
         """
-        samples = struct.unpack(f"{len(data)//2}h", data)
+        samples = struct.unpack(f"{len(data) // 2}h", data)
         return sum(abs(s) for s in samples) / len(samples)
 
     def record_until_silence(self, device_index: Optional[int] = None) -> Optional[bytes]:
@@ -197,9 +203,9 @@ class VoiceLoop:
                 device=device_index,
                 channels=1,
                 samplerate=self.config.sample_rate,
-                dtype='int16',
+                dtype="int16",
                 blocksize=self.config.chunk_size,
-                callback=callback
+                callback=callback,
             ):
                 # Wait for first speech or timeout
                 while silence_count < 3 and not self._shutdown_event.is_set():
@@ -262,14 +268,17 @@ class VoiceLoop:
 
         # Sanitize input - escape any prompt injection attempts
         sanitized_text = text.replace("{", "{{").replace("}", "}}")
-        prompt = f"You are a helpful voice assistant. Reply in 50 words or less. User said: {sanitized_text}"
+        prompt = (
+            "You are a helpful voice assistant. Reply in 50 words or less. "
+            f"User said: {sanitized_text}"
+        )
 
         try:
             response = requests.post(
                 self.config.ollama_url,
                 json={"model": self.config.llm_model, "prompt": prompt, "stream": True},
                 timeout=self.config.llm_timeout,
-                stream=True
+                stream=True,
             )
             response.raise_for_status()
 
@@ -278,9 +287,9 @@ class VoiceLoop:
             for line in response.iter_lines():
                 if line:
                     try:
-                        data = requests.models.json.loads(line.decode() if isinstance(line, bytes) else line)
-                        if 'response' in data:
-                            response_parts.append(data['response'])
+                        data = json.loads(line.decode() if isinstance(line, bytes) else line)
+                        if "response" in data:
+                            response_parts.append(data["response"])
                     except (ValueError, json.JSONDecodeError):
                         # Skip malformed JSON lines
                         continue
@@ -412,6 +421,7 @@ def _set_shutdown():
 # ============================================================================
 # Main Entry Point
 # ============================================================================
+
 
 def main():
     # Setup signal handler for graceful shutdown

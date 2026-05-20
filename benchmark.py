@@ -16,20 +16,19 @@ To pass Tier 5 Enterprise tests, you need:
   - Define SLA targets (p99 latency, uptime %, concurrent users)
 - Data sovereignty: already achieved (all local) ✓
 """
-import warnings
+
+import json
 import os
+import statistics
+import time
+import warnings
+import importlib.util
+import requests
+from dataclasses import dataclass
 
 # Suppress langgraph deprecation warning (emitted at import time)
 os.environ["PYTHONWARNINGS"] = "ignore"
 warnings.filterwarnings("ignore", ".*allowed_objects.*")
-
-import time
-import json
-import statistics
-import subprocess
-import requests
-from dataclasses import dataclass, field
-from typing import Optional
 
 # Configuration
 OLLAMA_URL = "http://localhost:11434"
@@ -37,6 +36,7 @@ OLLAMA_MODEL = "qwen2.5:1.5b"
 KOKORO_MODEL = "/home/tyler/kokoro-onnx/kokoro-v1.0.onnx"
 KOKORO_VOICES = "/home/tyler/kokoro-onnx/voices-v1.0.bin"
 SAMPLE_RATE = 16000
+
 
 @dataclass
 class BenchmarkResult:
@@ -47,6 +47,7 @@ class BenchmarkResult:
     score: float  # 0-100
     details: str = ""
     recommendation: str = ""
+
 
 class VoiceAgentBenchmarks:
     def __init__(self):
@@ -64,7 +65,8 @@ class VoiceAgentBenchmarks:
     def check_kokoro(self) -> bool:
         try:
             from kokoro_onnx import Kokoro
-            k = Kokoro(KOKORO_MODEL, KOKORO_VOICES)
+
+            Kokoro(KOKORO_MODEL, KOKORO_VOICES)
             return True
         except ImportError:
             return False
@@ -72,13 +74,7 @@ class VoiceAgentBenchmarks:
             return False
 
     def check_whisper(self) -> bool:
-        try:
-            from faster_whisper import WhisperModel
-            return True
-        except ImportError:
-            return False
-        except Exception:
-            return False
+        return importlib.util.find_spec("faster_whisper") is not None
 
     # ─────────────────────────────────────────────────────────────
     # TIER 1: COMPONENT HEALTH CHECKS (Simple)
@@ -99,7 +95,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=100 if r.status_code == 200 else 0,
                 details=f"Models available: {', '.join(model_names)}",
-                recommendation="PASS" if r.status_code == 200 else "Check Ollama service"
+                recommendation="PASS" if r.status_code == 200 else "Check Ollama service",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -109,7 +105,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Start Ollama: ollama serve"
+                recommendation="Start Ollama: ollama serve",
             )
 
     def tier1_stt_health(self) -> BenchmarkResult:
@@ -117,7 +113,8 @@ class VoiceAgentBenchmarks:
         start = time.time()
         try:
             from faster_whisper import WhisperModel
-            model = WhisperModel("small", device="cpu", compute_type="int8")
+
+            _ = WhisperModel("small", device="cpu", compute_type="int8")
             latency = (time.time() - start) * 1000
             return BenchmarkResult(
                 name="STT Health Check",
@@ -126,7 +123,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=100,
                 details=f"Model loaded in {latency:.0f}ms",
-                recommendation="PASS"
+                recommendation="PASS",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -136,7 +133,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation=f"Install: .venv/bin/pip install faster-whisper"
+                recommendation="Install: .venv/bin/pip install faster-whisper",
             )
 
     def tier1_tts_health(self) -> BenchmarkResult:
@@ -144,6 +141,7 @@ class VoiceAgentBenchmarks:
         start = time.time()
         try:
             from kokoro_onnx import Kokoro
+
             k = Kokoro(KOKORO_MODEL, KOKORO_VOICES)
             latency = (time.time() - start) * 1000
             return BenchmarkResult(
@@ -153,7 +151,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=100,
                 details=f"Kokoro loaded with {len(k.voices)} voices in {latency:.0f}ms",
-                recommendation="PASS"
+                recommendation="PASS",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -163,7 +161,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Verify Kokoro files at /home/tyler/kokoro-onnx/"
+                recommendation="Verify Kokoro files at /home/tyler/kokoro-onnx/",
             )
 
     def tier1_vad_health(self) -> BenchmarkResult:
@@ -178,7 +176,7 @@ class VoiceAgentBenchmarks:
             latency_ms=0,
             score=100 if (threshold_ok and frames_ok) else 50,
             details="SILENCE_THRESHOLD=500, SILENCE_FRAMES=15",
-            recommendation="PASS" if (threshold_ok and frames_ok) else "Tune VAD settings"
+            recommendation="PASS" if (threshold_ok and frames_ok) else "Tune VAD settings",
         )
 
     # ─────────────────────────────────────────────────────────────
@@ -192,6 +190,7 @@ class VoiceAgentBenchmarks:
         try:
             # Simulate with a simple TTS→STT roundtrip test
             from kokoro_onnx import Kokoro
+
             k = Kokoro(KOKORO_MODEL, KOKORO_VOICES)
             samples, sr = k.create("testing", voice="af_sarah")
             latency = (time.time() - start) * 1000
@@ -202,7 +201,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=85,  # No ground truth audio file
                 details=f"TTS generated {len(samples)} samples for 'testing'",
-                recommendation="Add real test audio with known transcript"
+                recommendation="Add real test audio with known transcript",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -212,7 +211,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Record test audio file for accurate benchmark"
+                recommendation="Record test audio file for accurate benchmark",
             )
 
     def tier2_llm_response_time(self) -> BenchmarkResult:
@@ -222,7 +221,7 @@ class VoiceAgentBenchmarks:
             r = requests.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": "hi", "stream": False},
-                timeout=30
+                timeout=30,
             )
             latency = (time.time() - start) * 1000
             response = r.json().get("response", "")
@@ -233,7 +232,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=max(0, 100 - (latency - 500)),
                 details=f"Response: '{response[:50]}' in {latency:.0f}ms",
-                recommendation="Target < 2s for voice (< 500ms ideal)"
+                recommendation="Target < 2s for voice (< 500ms ideal)",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -243,13 +242,14 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Check Ollama model is loaded"
+                recommendation="Check Ollama model is loaded",
             )
 
     def tier2_tts_generation_time(self) -> BenchmarkResult:
         """How fast does TTS generate audio?"""
         try:
             from kokoro_onnx import Kokoro
+
             k = Kokoro(KOKORO_MODEL, KOKORO_VOICES)
             # Warmup - first call includes model loading + ONNX session compilation
             k.create("warmup", voice="af_sarah")
@@ -266,7 +266,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=max(0, 100 - (rtf * 100)),
                 details=f"{len(samples)} samples, {audio_duration_ms:.0f}ms audio, RTF={rtf:.2f}",
-                recommendation=f"RTF < 0.5 for real-time ({rtf:.2f} current)"
+                recommendation=f"RTF < 0.5 for real-time ({rtf:.2f} current)",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -276,7 +276,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Check Kokoro model files"
+                recommendation="Check Kokoro model files",
             )
 
     # ─────────────────────────────────────────────────────────────
@@ -292,15 +292,15 @@ class VoiceAgentBenchmarks:
                 f"{OLLAMA_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": "count to 5", "stream": True},
                 timeout=30,
-                stream=True
+                stream=True,
             )
             for line in r.iter_lines():
                 if line:
                     data = json.loads(line)
-                    if 'response' in data:
+                    if "response" in data:
                         if first_token_time is None:
                             first_token_time = time.time()
-                        if data.get('done'):
+                        if data.get("done"):
                             break
             total_time = (time.time() - start) * 1000
             ttft = (first_token_time - start) * 1000 if first_token_time else 0
@@ -311,7 +311,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=ttft,
                 score=max(0, 100 - (ttft - 200) / 5),
                 details=f"First token in {ttft:.0f}ms, total {total_time:.0f}ms",
-                recommendation="Target < 500ms TTFT for voice (< 200ms ideal)"
+                recommendation="Target < 500ms TTFT for voice (< 200ms ideal)",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -321,7 +321,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Check streaming endpoint"
+                recommendation="Check streaming endpoint",
             )
 
     def tier3_tool_calling(self) -> BenchmarkResult:
@@ -335,9 +335,14 @@ class VoiceAgentBenchmarks:
                     "model": OLLAMA_MODEL,
                     "prompt": "What time is it? Use the get_time tool.",
                     "stream": False,
-                    "tools": [{"type": "function", "function": {"name": "get_time", "description": "returns current time"}}]
+                    "tools": [
+                        {
+                            "type": "function",
+                            "function": {"name": "get_time", "description": "returns current time"},
+                        }
+                    ],
                 },
-                timeout=30
+                timeout=30,
             )
             latency = (time.time() - start) * 1000
             response = r.json().get("response", "")
@@ -345,19 +350,20 @@ class VoiceAgentBenchmarks:
             has_tool_call = "get_time" in response.lower() or "tool" in response.lower()
             # Also accept JSON format: {"get_time": {}}
             import json
+
             try:
                 # Try to find JSON in response
-                for line in response.split('\n'):
+                for line in response.split("\n"):
                     line = line.strip()
-                    if '{' in line:
+                    if "{" in line:
                         try:
                             parsed = json.loads(line)
                             if isinstance(parsed, dict):
                                 has_tool_call = True
                                 break
-                        except:
+                        except (TypeError, ValueError, json.JSONDecodeError):
                             pass
-            except:
+            except Exception:
                 pass
             return BenchmarkResult(
                 name="Tool Calling",
@@ -366,7 +372,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=75 if has_tool_call else 40,
                 details=f"Model response mentions tools: {has_tool_call}",
-                recommendation="Implement Ollama tool-calling API"
+                recommendation="Implement Ollama tool-calling API",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -376,7 +382,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=(time.time() - start) * 1000,
                 score=0,
                 details=str(e),
-                recommendation="Check Ollama version for tool support"
+                recommendation="Check Ollama version for tool support",
             )
 
     def tier3_multilingual(self) -> BenchmarkResult:
@@ -385,15 +391,19 @@ class VoiceAgentBenchmarks:
         test_phrases = [
             ("Spanish", "hola como estas"),
             ("French", "bonjour merci"),
-            ("German", "guten tag")
+            ("German", "guten tag"),
         ]
         results = []
         for lang, phrase in test_phrases:
             try:
                 r = requests.post(
                     f"{OLLAMA_URL}/api/generate",
-                    json={"model": OLLAMA_MODEL, "prompt": f"Reply with just 'understood' to this: {phrase}", "stream": False},
-                    timeout=15
+                    json={
+                        "model": OLLAMA_MODEL,
+                        "prompt": f"Reply with just 'understood' to this: {phrase}",
+                        "stream": False,
+                    },
+                    timeout=15,
                 )
                 response = r.json().get("response", "")
                 results.append((lang, "understood" in response.lower()))
@@ -410,14 +420,15 @@ class VoiceAgentBenchmarks:
             passed=success_rate >= 66,
             latency_ms=latency,
             score=success_rate,
-            details=", ".join([f"{l}: {'✓' if r else '✗'}" for l, r in results]),
-            recommendation="Use multilingual model if < 66% success"
+            details=", ".join(
+                [f"{language}: {'✓' if result else '✗'}" for language, result in results]
+            ),
+            recommendation="Use multilingual model if < 66% success",
         )
 
     def tier3_conversation_memory(self) -> BenchmarkResult:
         """Can agent remember context from earlier in conversation?"""
         try:
-            from langgraph_agent import create_voice_agent, VoiceAgentState
             # This would test checkpoint retrieval
             return BenchmarkResult(
                 name="Conversation Memory",
@@ -426,7 +437,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=80,
                 details="LangGraph InMemorySaver checkpointing active",
-                recommendation="Test with real multi-turn conversation"
+                recommendation="Test with real multi-turn conversation",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -436,7 +447,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Verify langgraph_agent module"
+                recommendation="Verify langgraph_agent module",
             )
 
     # ─────────────────────────────────────────────────────────────
@@ -453,7 +464,7 @@ class VoiceAgentBenchmarks:
             latency_ms=0,
             score=0,
             details="Requires noisy audio dataset",
-            recommendation="Record test samples: quiet office, manufacturing floor, call center"
+            recommendation="Record test samples: quiet office, manufacturing floor, call center",
         )
 
     def tier4_concurrent_users(self) -> BenchmarkResult:
@@ -467,7 +478,7 @@ class VoiceAgentBenchmarks:
                     r = requests.post(
                         f"{OLLAMA_URL}/api/generate",
                         json={"model": OLLAMA_MODEL, "prompt": "hi", "stream": False},
-                        timeout=30
+                        timeout=30,
                     )
                     responses.append(r.status_code == 200)
                 except requests.RequestException:
@@ -490,10 +501,10 @@ class VoiceAgentBenchmarks:
             name="Concurrent Users",
             tier=4,
             passed=max_stable >= 10,
-            latency_ms=max(lat for _, l, _ in results),
+            latency_ms=max(latency for _, latency, _ in results),
             score=min(100, max_stable * 10),
             details=f"Max stable: {max_stable} users. {results}",
-            recommendation="Add load balancing or smaller models for > 10 concurrent"
+            recommendation="Add load balancing or smaller models for > 10 concurrent",
         )
 
     def tier4_long_context(self) -> BenchmarkResult:
@@ -506,9 +517,9 @@ class VoiceAgentBenchmarks:
                 json={
                     "model": OLLAMA_MODEL,
                     "prompt": "Summarize this conversation: " + "word " * 500,
-                    "stream": False
+                    "stream": False,
                 },
-                timeout=60
+                timeout=60,
             )
             latency = (time.time() - start) * 1000
             return BenchmarkResult(
@@ -518,7 +529,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=latency,
                 score=80 if r.status_code == 200 else 0,
                 details=f"Handled 500 word prompt in {latency:.0f}ms",
-                recommendation="Test with actual conversation history"
+                recommendation="Test with actual conversation history",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -528,7 +539,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Monitor context window limits"
+                recommendation="Monitor context window limits",
             )
 
     def tier4_adversarial_input(self) -> BenchmarkResult:
@@ -545,7 +556,7 @@ class VoiceAgentBenchmarks:
                 r = requests.post(
                     f"{OLLAMA_URL}/api/generate",
                     json={"model": OLLAMA_MODEL, "prompt": input_text, "stream": False},
-                    timeout=15
+                    timeout=15,
                 )
                 safe = r.status_code == 200 and "hacked" not in r.json().get("response", "").lower()
                 results.append((name, safe, r.status_code))
@@ -562,7 +573,7 @@ class VoiceAgentBenchmarks:
             latency_ms=0,
             score=safety_rate,
             details=", ".join([f"{n}:{'✓' if s else '✗'}" for n, s, _ in results]),
-            recommendation="Add input sanitization layer"
+            recommendation="Add input sanitization layer",
         )
 
     # ─────────────────────────────────────────────────────────────
@@ -572,6 +583,7 @@ class VoiceAgentBenchmarks:
     def tier5_pII_handling(self) -> BenchmarkResult:
         """Does agent properly handle PII / sensitive data?"""
         import os
+
         pii_file = "/home/tyler/voice-agent/pii_handler.py"
         if not os.path.exists(pii_file):
             return BenchmarkResult(
@@ -581,10 +593,11 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details="No PII handler found",
-                recommendation="Implement PII detection + redaction layer before production"
+                recommendation="Implement PII detection + redaction layer before production",
             )
         try:
-            from pii_handler import detect_pii, redact_pii, has_pii
+            from pii_handler import has_pii
+
             test_cases = [
                 ("email@example.com", True, "email"),
                 ("My SSN is 123-45-6789", True, "ssn"),
@@ -604,7 +617,9 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=score,
                 details=f"{passed}/{len(test_cases)} test cases passed",
-                recommendation="PASS - PII detection layer implemented" if score >= 75 else "Improve pattern matching"
+                recommendation="PASS - PII detection layer implemented"
+                if score >= 75
+                else "Improve pattern matching",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -614,13 +629,14 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Fix PII handler module"
+                recommendation="Fix PII handler module",
             )
 
     def tier5_audit_logging(self) -> BenchmarkResult:
         """Are all interactions logged for compliance?"""
         # Check whether compliance/runtime logs exist.
         import os
+
         log_dir = "/home/tyler/voice-agent/logs"
         has_logs = os.path.exists(log_dir) and len(os.listdir(log_dir)) > 0
         return BenchmarkResult(
@@ -629,13 +645,16 @@ class VoiceAgentBenchmarks:
             passed=has_logs,
             latency_ms=0,
             score=100 if has_logs else 40,
-            details=f"Log dir exists: {has_logs}, files: {len(os.listdir(log_dir)) if has_logs else 0}",
-            recommendation="Add structured logging with timestamps, user IDs, transcript"
+            details=(
+                f"Log dir exists: {has_logs}, files: {len(os.listdir(log_dir)) if has_logs else 0}"
+            ),
+            recommendation="Add structured logging with timestamps, user IDs, transcript",
         )
 
     def tier5_failover_recovery(self) -> BenchmarkResult:
         """What happens when a component fails mid-conversation?"""
         import os
+
         failover_file = "/home/tyler/voice-agent/failover_test.py"
         if not os.path.exists(failover_file):
             return BenchmarkResult(
@@ -645,21 +664,27 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details="No failover test module found",
-                recommendation="Test: kill STT mid-call, kill TTS mid-call, kill LLM mid-call"
+                recommendation="Test: kill STT mid-call, kill TTS mid-call, kill LLM mid-call",
             )
         try:
             from failover_test import ComponentFailureTest
+
             tester = ComponentFailureTest()
             result = tester.run_all()
-            score = (result['passed'] / result['total']) * 100 if result['total'] > 0 else 0
+            score = (result["passed"] / result["total"]) * 100 if result["total"] > 0 else 0
             return BenchmarkResult(
                 name="Failover Recovery",
                 tier=5,
-                passed=result['recoverable'],
+                passed=result["recoverable"],
                 latency_ms=0,
                 score=score,
-                details=f"{result['passed']}/{result['total']} components recoverable: {list(result['results'].keys())}",
-                recommendation="PASS - All components have recovery mechanisms" if result['recoverable'] else "Add more failover handling"
+                details=(
+                    f"{result['passed']}/{result['total']} components recoverable: "
+                    f"{list(result['results'].keys())}"
+                ),
+                recommendation="PASS - All components have recovery mechanisms"
+                if result["recoverable"]
+                else "Add more failover handling",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -669,12 +694,14 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Fix failover test module"
+                recommendation="Fix failover test module",
             )
 
     def tier5_sla_compliance(self) -> BenchmarkResult:
         """Does system meet SLA targets under load?"""
-        import os, json
+        import os
+        import json
+
         sla_file = "/home/tyler/voice-agent/logs/sla_targets.json"
         if not os.path.exists(sla_file):
             return BenchmarkResult(
@@ -684,7 +711,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details="No SLA defined - define targets first",
-                recommendation="Define SLA: p99 latency < Xms, uptime > 99.9%, concurrent > N"
+                recommendation="Define SLA: p99 latency < Xms, uptime > 99.9%, concurrent > N",
             )
         try:
             with open(sla_file) as f:
@@ -701,8 +728,11 @@ class VoiceAgentBenchmarks:
                 passed=passes,
                 latency_ms=0,
                 score=score,
-                details=f"SLA defined: {p99_lat}ms p99, {max_concurrent} concurrent. System supports {max_users}.",
-                recommendation="PASS" if passes else "Scale horizontally for more concurrent users"
+                details=(
+                    f"SLA defined: {p99_lat}ms p99, {max_concurrent} concurrent. "
+                    f"System supports {max_users}."
+                ),
+                recommendation="PASS" if passes else "Scale horizontally for more concurrent users",
             )
         except Exception as e:
             return BenchmarkResult(
@@ -712,7 +742,7 @@ class VoiceAgentBenchmarks:
                 latency_ms=0,
                 score=0,
                 details=str(e),
-                recommendation="Fix SLA file format"
+                recommendation="Fix SLA file format",
             )
 
     def tier5_data_sovereignty(self) -> BenchmarkResult:
@@ -725,7 +755,7 @@ class VoiceAgentBenchmarks:
             latency_ms=0,
             score=100,
             details="All processing on-prem, no external API calls required",
-            recommendation="PASS - Full data sovereignty achieved"
+            recommendation="PASS - Full data sovereignty achieved",
         )
 
     # ─────────────────────────────────────────────────────────────
@@ -768,6 +798,7 @@ class VoiceAgentBenchmarks:
             all_results.extend(self.run_tier(tier))
         return all_results
 
+
 def print_results(results: list[BenchmarkResult], verbose: bool = False):
     print("\n" + "=" * 70)
     print(f" BENCHMARK RESULTS - {len(results)} tests")
@@ -794,10 +825,12 @@ def print_results(results: list[BenchmarkResult], verbose: bool = False):
     print(f" SUMMARY: {passed}/{len(results)} passed | Avg Score: {avg_score:.1f}/100")
     print("=" * 70)
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tier", type=int, choices=[1,2,3,4,5], help="Run specific tier")
+    parser.add_argument("--tier", type=int, choices=[1, 2, 3, 4, 5], help="Run specific tier")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 

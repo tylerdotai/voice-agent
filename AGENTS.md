@@ -61,7 +61,7 @@ docker compose down
 - `docker-compose.yml` mounts `./models`, `./logs`, and `./data`; model files must exist or be supplied separately.
 - Compose exposes `7880` both for `voice-agent` and `livekit`; check for port conflicts before running the full stack.
 - The compose healthcheck inside `voice-agent` currently checks `localhost:11434`; inside Docker, Ollama is the `ollama` service, so verify/fix before relying on container health.
-- `requirements.txt` includes `pjsua2` for SIP; installation may fail on systems without PJSIP build prerequisites.
+- SIP libraries such as `pjsua2` are optional and not installed by default; real SIP behavior needs PJSIP prerequisites plus a real Asterisk/FreePBX test.
 
 ## Workflow Conventions
 

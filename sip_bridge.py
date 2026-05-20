@@ -7,11 +7,9 @@ For SMBs with existing phone systems - just connect to their Asterisk box.
 """
 
 import asyncio
+import importlib.util
 import os
 import socket
-import json
-import wave
-import struct
 import logging
 from typing import Optional, Callable
 from dataclasses import dataclass, field
@@ -22,22 +20,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Try to import required libs, graceful degradation
-try:
-    import pjsua2 as pj
-    PJSIP_AVAILABLE = True
-except ImportError:
-    PJSIP_AVAILABLE = False
+PJSIP_AVAILABLE = importlib.util.find_spec("pjsua2") is not None
+if not PJSIP_AVAILABLE:
     logger.warning("pjsua2 not available - SIP bridge will run in passthrough mode")
 
-try:
-    from asterisk.asterisk import AsteriskManager
-    AST_MANAGER_AVAILABLE = True
-except ImportError:
-    AST_MANAGER_AVAILABLE = False
+AST_MANAGER_AVAILABLE = importlib.util.find_spec("asterisk") is not None
 
 
 class CallState(Enum):
     """SIP call states"""
+
     IDLE = "idle"
     RINGING = "ringing"
     CONNECTED = "connected"
@@ -48,6 +40,7 @@ class CallState(Enum):
 @dataclass
 class CallConfig:
     """Configuration for SIP bridge"""
+
     asterisk_host: str = field(default_factory=lambda: os.getenv("ASTERISK_HOST", "localhost"))
     asterisk_port: int = field(default_factory=lambda: int(os.getenv("ASTERISK_PORT", "5038")))
     asterisk_user: str = field(default_factory=lambda: os.getenv("ASTERISK_USER", "voiceagent"))
@@ -61,6 +54,7 @@ class CallConfig:
 
 class AudioBuffer:
     """Ring buffer for audio streaming"""
+
     def __init__(self, max_size: int = 16000):
         self.buffer = bytearray()
         self.max_size = max_size
@@ -68,7 +62,7 @@ class AudioBuffer:
     def write(self, audio_data: bytes) -> None:
         self.buffer.extend(audio_data)
         if len(self.buffer) > self.max_size:
-            self.buffer = self.buffer[-self.max_size:]
+            self.buffer = self.buffer[-self.max_size :]
 
     def read(self, size: int) -> bytes:
         if len(self.buffer) < size:
@@ -118,17 +112,18 @@ class SIPBridge:
         try:
             self.ami_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.ami_socket.settimeout(10)
-            self.ami_socket.connect((
-                self.config.asterisk_host,
-                self.config.asterisk_port
-            ))
+            self.ami_socket.connect((self.config.asterisk_host, self.config.asterisk_port))
 
             # Read initial greeting
             greeting = self.ami_socket.recv(1024).decode()
             logger.info(f"AMI connected: {greeting[:50]}")
 
             # Login
-            login_cmd = f"Action: Login\r\nUsername: {self.config.asterisk_user}\r\nSecret: {self.config.asterisk_password}\r\n\r\n"
+            login_cmd = (
+                "Action: Login\r\n"
+                f"Username: {self.config.asterisk_user}\r\n"
+                f"Secret: {self.config.asterisk_password}\r\n\r\n"
+            )
             self.ami_socket.send(login_cmd.encode())
 
             response = self.ami_socket.recv(1024).decode()
@@ -149,7 +144,7 @@ class SIPBridge:
             try:
                 self.ami_socket.send(b"Action: Logoff\r\n\r\n")
                 self.ami_socket.close()
-            except:
+            except Exception:
                 pass
             self.ami_socket = None
 
@@ -200,9 +195,7 @@ class SIPBridge:
 
         try:
             # Answer the call
-            await self.send_ami_command(
-                f"Action: Hangup\r\nChannel: {call_id}\r\n\r\n"
-            )
+            await self.send_ami_command(f"Action: Hangup\r\nChannel: {call_id}\r\n\r\n")
 
             # In a real implementation, we'd:
             # 1. Accept the call
@@ -277,20 +270,13 @@ class SIPBridge:
         return {
             "running": self.running,
             "active_calls": len(self.active_calls),
-            "calls": {
-                call_id: state.value
-                for call_id, state in self.active_calls.items()
-            }
+            "calls": {call_id: state.value for call_id, state in self.active_calls.items()},
         }
 
 
 async def main():
     """Test the SIP bridge"""
-    config = CallConfig(
-        asterisk_host="localhost",
-        asterisk_port=5038,
-        sip_extension="6000"
-    )
+    config = CallConfig(asterisk_host="localhost", asterisk_port=5038, sip_extension="6000")
 
     bridge = SIPBridge(config)
 

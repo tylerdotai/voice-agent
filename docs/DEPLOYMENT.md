@@ -24,7 +24,7 @@ A practical SMB box is a mini PC / NUC-style machine with Ubuntu 24.04, 16GB RAM
 Optional:
 - GPU (NVIDIA or AMD) for faster TTS
 - Asterisk/FreePBX for phone integration
-- SIP support may require system-level PJSIP build prerequisites because `requirements.txt` includes `pjsua2`.
+- SIP support may require system-level PJSIP build prerequisites and optional `pjsua2`; it is not installed by default.
 
 ## Installation Methods
 
